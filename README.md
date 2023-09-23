@@ -21,11 +21,12 @@
 
 module "data-plane-aws" {
   source                    = "iomete/data-plane-aws/aws"
-  version                   = "1.1.1"
-  account_id                = "account_id"
+  version                   = "1.1.0"
   region                    = "us-east-1"  
  
- 
+  # the followings are your lakehouse bucket name and role name to access it
+  lakehouse_role_name       = "iomete-lakehouse-role-kgnwqy"
+  lakehouse_bucket_name     = "iomete-lakehouse-bucket-kgnwqy"
  
   # optional | the following line gives permission to administrate Kubernetes and KMS
   # kms_key_arn               = "arn:aws:kms:us-east-1:1234567890:key/your_key_arn"

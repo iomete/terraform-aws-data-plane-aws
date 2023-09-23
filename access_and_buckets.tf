@@ -1,6 +1,6 @@
 locals {
-  cluster_role               = "${local.cluster_name}-${random_id.random.hex}-role"
-  cluster_assets_bucket_name = "${local.cluster_name}-${random_id.random.hex}-assets"
+  cluster_role               = "${local.cluster_name}-role"
+  cluster_assets_bucket_name = "${local.cluster_name}-assets"
 }
 
 

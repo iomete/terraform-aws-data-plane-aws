@@ -1,9 +1,9 @@
 data "aws_availability_zones" "available" {}
 
 locals {
-  vpc_cidr = "10.10.0.0/16"
-  azs      = slice(data.aws_availability_zones.available.names, 0, (length(data.aws_availability_zones.available.names) <= 2 ? length(data.aws_availability_zones.available.names) : 3))
-  arns     = concat(var.additional_administrators, ["arn:aws:iam::680330367469:role/iomete-eks-operator"])
+   vpc_cidr            = "10.10.0.0/16"
+  azs                 = slice(data.aws_availability_zones.available.names, 0, (length(data.aws_availability_zones.available.names) <= 2 ? length(data.aws_availability_zones.available.names) : 3))
+  arns                = concat(var.additional_administrators, ["arn:aws:iam::680330367469:role/iomete-eks-operator"])
 }
 
 ################################################################################
@@ -12,7 +12,7 @@ locals {
 
 module "eks" {
   source                                       = "terraform-aws-modules/eks/aws"
-  version                                      = "19.16.0"
+  version                                      = "19.15.4"
   cluster_name                                 = local.cluster_name
   cluster_version                              = var.eks_cluster_version
   kms_key_administrators                       = var.additional_administrators
@@ -52,7 +52,7 @@ module "eks" {
   # This ensures core services such as VPC CNI, CoreDNS, etc. are up and running
   # so that Karpenter can be deployed and start managing compute capacity as required
   eks_managed_node_groups = {
-    "iomete-dp-ng" = {
+    "${local.cluster_name}-ng" = {
       enable_monitoring = var.detailed_monitoring
       instance_types    = ["t3a.xlarge"]
       #keep nodes in same AZ
@@ -138,7 +138,7 @@ module "karpenter" {
   # Since Karpenter is running on an EKS Managed Node group,
   # we can re-use the role that was created for the node group
   create_iam_role = false
-  iam_role_arn    = module.eks.eks_managed_node_groups["iomete-dp-ng"].iam_role_arn
+  iam_role_arn    = module.eks.eks_managed_node_groups["${local.cluster_name}-ng"].iam_role_arn
   tags            = local.tags
 }
 

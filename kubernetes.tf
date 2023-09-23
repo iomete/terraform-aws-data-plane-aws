@@ -34,10 +34,10 @@ resource "kubernetes_secret" "iom-manage-secrets" {
   }
 
   data = {
-    "settings" = jsonencode({
+    "aws.settings" = jsonencode({
       region = var.region,
-      cloud  = "aws",
       cluster = {
+        id   = var.cluster_id,
         name = local.cluster_name,
       },
       karpenter = {
@@ -66,10 +66,6 @@ resource "kubernetes_secret" "iom-manage-secrets" {
         cluster_role_arn = aws_iam_role.cluster_lakehouse.arn
         region           = var.region
       },
-      connection = {
-        cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data),
-        cluster_endpoint       = module.eks.cluster_endpoint,
-      }
     })
   }
 
@@ -88,12 +84,11 @@ resource "kubernetes_namespace" "fluxcd" {
 }
 
 
-
 resource "helm_release" "fluxcd" {
   name       = "helm-operator"
   namespace  = "fluxcd"
   repository = "https://fluxcd-community.github.io/helm-charts"
-  version    = "2.9.2"
+  version    = "2.7.0"
   chart      = "flux2"
   depends_on = [
     kubernetes_namespace.fluxcd
@@ -118,34 +113,5 @@ resource "helm_release" "fluxcd" {
     value = "false"
   }
 
-
-}
-
-
-resource "helm_release" "iomete-agent" {
-  name       = "iomete-agent"
-  namespace  = "default"
-  repository = "https://chartmuseum.iomete.com"
-  chart      = "iom-agent"
-  version    = "0.2.0"
-  depends_on = [
-    helm_release.fluxcd,
-    kubernetes_secret.iom-manage-secrets,
-  ]
-
-  set {
-    name  = "iometeAccountId"
-    value = var.account_id
-  }
-
-  set {
-    name  = "cloud"
-    value = "aws"
-  }
-
-  set {
-    name  = "region"
-    value = var.region
-  }
 
 }

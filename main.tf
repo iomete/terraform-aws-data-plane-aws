@@ -1,18 +1,13 @@
 provider "aws" {
   region = var.region
 }
-resource "random_id" "random" {
-  byte_length = 3
-}
 
 locals {
-  depends_on            = [resource.random_id.random]
-  cluster_name          = "iomete-data-plane"
-  module_version        = "1.1.0"
-  lakehouse_role_name   = "iomete-lakehouse-role-${random_id.random.hex}"
-  lakehouse_bucket_name = "iomete-lakehouse-bucket-${random_id.random.hex}"
+  cluster_name   = "iomete-${var.cluster_id}"
+  module_version = "1.1.0"
 
   tags = {
+    "iomete.com/cluster_id" : var.cluster_id
     "iomete.com/cluster_name" : local.cluster_name
     "iomete.com/terraform" : true
     "iomete.com/managed" : true
@@ -22,14 +17,14 @@ locals {
 module "storage-configuration" {
   source                = "./modules/storage-configuration"
   aws_region            = var.region
-  lakehouse_bucket_name = local.lakehouse_bucket_name
-  lakehouse_role_name   = local.lakehouse_role_name
+  lakehouse_bucket_name = var.lakehouse_bucket_name
+  lakehouse_role_name   = var.lakehouse_role_name
   cluster_role_arn      = aws_iam_role.cluster_lakehouse.arn
 }
 
 
 resource "null_resource" "save_outputs" {
-  depends_on = [helm_release.fluxcd]
+  depends_on = [ helm_release.fluxcd ]
   triggers = {
     run_every_time = uuid()
   }
