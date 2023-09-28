@@ -13,7 +13,6 @@ output "cluster_certificate_authority_data" {
   value       = module.eks.cluster_certificate_authority_data
 }
 
-
 output "cluster_name" {
   description = "The name of the EKS cluster"
   value       = module.eks.cluster_name
@@ -43,4 +42,3 @@ output "nat_public_ips" {
   description = "List of public Elastic IPs created for AWS NAT Gateway"
   value       = module.vpc.nat_public_ips
 }
- 

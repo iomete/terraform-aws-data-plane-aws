@@ -7,7 +7,7 @@ provider "kubernetes" {
     api_version = "client.authentication.k8s.io/v1beta1"
     command     = "aws"
     # This requires the awscli to be installed locally where Terraform is executed
-    args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+    args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
   }
 }
 
@@ -20,7 +20,7 @@ provider "helm" {
       api_version = "client.authentication.k8s.io/v1beta1"
       command     = "aws"
       # This requires the awscli to be installed locally where Terraform is executed
-      args = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
+      args        = ["eks", "get-token", "--cluster-name", module.eks.cluster_name]
     }
   }
 }
@@ -28,17 +28,27 @@ provider "helm" {
 data "aws_caller_identity" "current" {}
 
 
-resource "kubernetes_secret" "iom-manage-secrets" {
+resource "kubernetes_namespace" "iomete-system" {
   metadata {
-    name = "iomete-manage-secrets"
+    name = "iomete-system"
+  }
+}
+
+resource "kubernetes_secret" "data-plane-secret" {
+  metadata {
+    name = "iomete-data-plane-secret"
+    namespace = "iomete-system"
   }
 
   data = {
-    "aws.settings" = jsonencode({
-      region = var.region,
-      cluster = {
-        id   = var.cluster_id,
-        name = local.cluster_name,
+    "settings" = jsonencode({
+      cloud                 = "aws",
+      region                = var.region,
+      cluster_name          = var.cluster_name,
+      storage_configuration = {
+        lakehouse_bucket_name = local.lakehouse_bucket_name,
+        assets_bucket_name    = local.assets_bucket_name,
+        lakehouse_role_arn    = aws_iam_role.lakehouse_role.arn,
       },
       karpenter = {
         irsa_arn         = module.karpenter.irsa_arn,
@@ -46,26 +56,13 @@ resource "kubernetes_secret" "iom-manage-secrets" {
         queue_name       = module.karpenter.queue_name,
       },
       eks = {
-        name                      = module.eks.cluster_name,
-        endpoint                  = module.eks.cluster_endpoint,
-        admin_arn                 = data.aws_caller_identity.current.arn,
-        additional_administrators = var.additional_administrators,
-        nat_public_ips            = module.vpc.nat_public_ips
-
-      },
-      default_storage_configuration = {
-        cluster_lakehouse_role_arn = aws_iam_role.cluster_lakehouse.arn,
-        bucket_arn                 = module.storage-configuration.bucket_arn,
-        bucket_access_role_arn     = module.storage-configuration.bucket_access_role_arn
+        name      = module.eks.cluster_name,
+        endpoint  = module.eks.cluster_endpoint,
+        admin_arn = data.aws_caller_identity.current.arn
       },
       terraform = {
         module_version = local.module_version
-      },
-      loki = {
-        bucket           = aws_s3_bucket.assets.bucket
-        cluster_role_arn = aws_iam_role.cluster_lakehouse.arn
-        region           = var.region
-      },
+      }
     })
   }
 
@@ -83,7 +80,6 @@ resource "kubernetes_namespace" "fluxcd" {
   }
 }
 
-
 resource "helm_release" "fluxcd" {
   name       = "helm-operator"
   namespace  = "fluxcd"
@@ -93,6 +89,7 @@ resource "helm_release" "fluxcd" {
   depends_on = [
     kubernetes_namespace.fluxcd
   ]
+
   set {
     name  = "imageReflectionController.create"
     value = "false"
@@ -112,6 +109,4 @@ resource "helm_release" "fluxcd" {
     name  = "notificationController.create"
     value = "false"
   }
-
-
 }

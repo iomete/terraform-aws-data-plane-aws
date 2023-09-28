@@ -3,7 +3,7 @@
 ################################################################################
 
 resource "aws_iam_role" "ebs-csi-driver" {
-  name = "AmazonEKS_EBS_CSI_DriverRole-${local.cluster_name}"
+  name = "AmazonEKS_EBS_CSI_DriverRole-${var.cluster_name}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"

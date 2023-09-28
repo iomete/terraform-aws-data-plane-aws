@@ -1,12 +1,13 @@
+variable "cluster_name" {
+  type        = string
+  description = "A unique cluster name for IOMETE. It should be unique withing compatible with AWS naming conventions."
+}
+
 variable "region" {
   description = "AWS region where cluster will be created"
   type        = string
 }
 
-variable "cluster_id" {
-  description = "Cluster id from IOMETE. This should match the cluster id in IOMETE"
-  type        = string
-}
 variable "eks_ng_instance_type" {
   description = "EKS main node group instance type"
   type        = string
@@ -53,15 +54,4 @@ variable "detailed_monitoring" {
   description = "Enable or disable detailed monitoring."
   type        = bool
   default     = false
-}
-
-# the followings are your lakehouse bucket name and role name to access it
-variable "lakehouse_role_name" {
-  description = "A role to access to the lakehouse bucket."
-  type        = string
-}
-
-variable "lakehouse_bucket_name" {
-  description = "A bucket name to store lakehouse data."
-  type        = string
 }
